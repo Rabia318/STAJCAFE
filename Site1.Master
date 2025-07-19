@@ -1,0 +1,159 @@
+﻿<%@ Master Language="C#" AutoEventWireup="true" CodeBehind="Site1.master.cs" Inherits="STAJCAFE.Site1" %>
+
+<!DOCTYPE html>
+
+<html>
+<head runat="server">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>STAJCAFE</title>
+
+    <script src="bootstrap.bundle.min.js"></script>
+    <link href="bootstrap.min.css" rel="stylesheet" />
+
+    <style>
+        .layout {
+            display: grid;
+            grid-template-columns: 200px 1fr; /* 200 px sabit + kalan alan */
+            grid-template-rows: 60px 1fr; /* 60 px header + kalan içerik */
+            grid-template-areas:
+                "logo   top"
+                "side   main";
+            height: 100vh;
+        }
+
+        /* Bölge atamaları */
+        .logo-area {
+            grid-area: logo;
+        }
+
+        .top-menu {
+            grid-area: top;
+        }
+
+        .sidebar {
+            grid-area: side;
+        }
+
+        .content {
+            grid-area: main;
+        }
+
+        /* Logo alanı */
+        .logo-area {
+            display: flex;
+            align-items: center;
+            background: #D8BFD8;
+            padding: 0 15px;
+        }
+
+        .logo-img {
+            width: 40px;
+            height: 40px;
+            margin-right: 8px;
+        }
+
+        .site-name {
+            font-size: 22px;
+            font-weight: bold;
+            color: #4B0082;
+        }
+
+        /* Üst menü */
+        .top-menu {
+            display: flex;
+            align-items: center;
+            margin: 0;
+            padding: 0 20px;
+            list-style: none;
+            background: #D8BFD8; /* aynı yükseklikte hizalı */
+        }
+
+            .top-menu li a {
+                padding: 0 15px;
+                color: #4B0082;
+                text-decoration: none;
+                font-weight: 600;
+            }
+
+                .top-menu li a:hover {
+                    background: #c9acd9;
+                }
+
+        /* Sol menü */
+        .sidebar {
+            background: #E6E6FA; /* logo genişliğiyle aynı sütun */
+            padding-top: 20px;
+        }
+
+            .sidebar ul {
+                list-style: none;
+                margin: 0;
+                padding: 0;
+            }
+
+            .sidebar li a {
+                display: block;
+                padding: 12px;
+                color: #4B0082;
+                text-decoration: none;
+            }
+
+                .sidebar li a:hover {
+                    background: #DDA0DD;
+                }
+
+        /* İçerik */
+        .content {
+            padding: 20px;
+            background: #F8F8FF;
+            overflow: auto;
+        }
+
+        /* Temel reset */
+        html, body {
+            margin: 0;
+            height: 100%;
+        }
+    </style>
+</head>
+
+<body>
+    <form id="form1" runat="server">
+        <asp:ScriptManager ID="ScriptManager1" runat="server" />
+
+        <div class="layout">
+            <!-- 1️⃣ Logo -->
+            <div class="logo-area">
+                <img src="images/1.png" class="logo-img" alt="Logo" />
+                <span class="site-name">StajCafe</span>
+            </div>
+
+            <!-- 2️⃣ Üst Menü -->
+            <ul class="top-menu">
+                <li><a href="AnaSayfa.aspx">Anasayfa</a></li>
+                <li><a href="RezervasyonIslemleri.aspx">Rezervasyonlar</a></li>
+                <li><a href="Siparisler.aspx">Siparişler</a></li>
+                <li><a href="Masalar.aspx">Masalar</a></li>
+                <%--<li><a href="Odeme.aspx">Odeme</a></li>--%>
+                <li><a href="SiparisGecmisi.aspx">Siparis Gecmisi</a></li>
+                
+            </ul>
+            </ul>
+
+            <!-- 3️⃣ Sol Menü -->
+            <nav class="sidebar">
+                <ul>
+                    <li><a href="Yiyecekler.aspx">Yiyecekler</a></li>
+                    <li><a href="Icecekler.aspx">İçecekler</a></li>
+                    <li><a href="Tatlılar.aspx">Tatlılar</a></li>
+                </ul>
+            </nav>
+
+            <!-- 4️⃣ Sayfa İçeriği -->
+            <main class="content">
+                <asp:ContentPlaceHolder ID="MainContent" runat="server" />
+            </main>
+        </div>
+    </form>
+</body>
+</html>
