@@ -35,12 +35,14 @@ namespace STAJCAFE
         {
             if (!int.TryParse(Request.QueryString["masaId"], out masaId) || masaId == 0)
             {
+                lblMesaj.ForeColor = System.Drawing.Color.Red;
                 lblMesaj.Text = "Geçersiz masa bilgisi!";
                 return;
             }
 
             if (ddlOdemeYontemi.SelectedValue == "Kart" && !KartBilgileriGecerliMi())
             {
+                lblMesaj.ForeColor = System.Drawing.Color.Red;
                 lblMesaj.Text = "Kart bilgilerini doğru doldurun!";
                 return;
             }
@@ -69,11 +71,18 @@ namespace STAJCAFE
 
                     tran.Commit();
 
-                    Response.Redirect("SiparisGecmisi.aspx");
+                    // Başarılı mesaj göster
+                    lblMesaj.ForeColor = System.Drawing.Color.Green;
+                    lblMesaj.Text = "Ödeme başarıyla gerçekleşti.";
+                    btnOdemeTamamla.Enabled = false;  // Butonu devre dışı bırak
+
+                    // İstersen burada ek işlemler yapabilirsin (örneğin 3 sn sonra yönlendirme)
+                    // Response.AddHeader("REFRESH", "3;URL=Masalar.aspx");
                 }
                 catch (Exception ex)
                 {
                     tran.Rollback();
+                    lblMesaj.ForeColor = System.Drawing.Color.Red;
                     lblMesaj.Text = "Ödeme sırasında hata oluştu: " + ex.Message;
                 }
             }

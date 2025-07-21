@@ -130,7 +130,7 @@
 
             <!-- 2️⃣ Üst Menü -->
             <ul class="top-menu">
-                <li><a href="AnaSayfa.aspx">Anasayfa</a></li>
+                <li><a href="AnaSayfa1.aspx">Anasayfa</a></li>
                 <li><a href="RezervasyonIslemleri.aspx">Rezervasyonlar</a></li>
                 <li><a href="Siparisler.aspx">Siparişler</a></li>
                 <li><a href="Masalar.aspx">Masalar</a></li>
