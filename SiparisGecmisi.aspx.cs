@@ -22,8 +22,16 @@ namespace STAJCAFE
             using (MySqlConnection conn = new MySqlConnection(connStr))
             {
                 string sql = @"
-                    SELECT sg.gecmisId, sg.masaId, u.urunAdi, sg.adet, sg.tarih
+                    SELECT 
+                        sg.gecmisId, 
+                        sg.musteriId, 
+                        m.musteriAdi,
+                        sg.masaId, 
+                        u.urunAdi, 
+                        sg.adet, 
+                        sg.tarih
                     FROM siparisGecmisi sg
+                    LEFT JOIN musteriler m ON sg.musteriId = m.musteriId
                     JOIN urunler u ON sg.urunId = u.urunId
                     ORDER BY sg.tarih DESC";
 

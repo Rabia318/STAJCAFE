@@ -28,6 +28,7 @@ namespace STAJCAFE
                     SELECT 
                         s.siparisId,
                         s.musteriId,
+                        s.masaId,
                         m.musteriAdi,
                         m.musteriSoyadi,
                         m.musteriNumarasi,
@@ -62,7 +63,7 @@ namespace STAJCAFE
                 Image imgDurum = (Image)e.Item.FindControl("imgDurum");
                 Label litUyari = (Label)e.Item.FindControl("litUyari");
 
-                litUyari.Text = ""; // Uyarı mesajını temizle
+                litUyari.Text = "";
 
                 DataRowView drv = (DataRowView)e.Item.DataItem;
 
@@ -107,22 +108,65 @@ namespace STAJCAFE
 
             string secilenDurum = rbl.SelectedValue;
 
-            if (secilenDurum == "Teslim Edildi")
+            using (MySqlConnection conn = new MySqlConnection(connStr))
             {
-                using (MySqlConnection conn = new MySqlConnection(connStr))
+                conn.Open();
+
+                if (secilenDurum == "Teslim Edildi")
                 {
-                    conn.Open();
+                    // Sipariş bilgilerini al
+                    string selectQuery = @"SELECT musteriId, masaId, urunId, adet FROM siparisler WHERE siparisId = @siparisId";
+                    MySqlCommand selectCmd = new MySqlCommand(selectQuery, conn);
+                    selectCmd.Parameters.AddWithValue("@siparisId", siparisId);
+
+                    int musteriId = 0;
+                    int masaId = 0;
+                    int urunId = 0;
+                    int adet = 0;
+
+                    using (MySqlDataReader reader = selectCmd.ExecuteReader())
+                    {
+                        if (reader.Read())
+                        {
+                            musteriId = reader["musteriId"] != DBNull.Value ? Convert.ToInt32(reader["musteriId"]) : 0;
+                            masaId = reader["masaId"] != DBNull.Value ? Convert.ToInt32(reader["masaId"]) : 0;
+                            urunId = reader["urunId"] != DBNull.Value ? Convert.ToInt32(reader["urunId"]) : 0;
+                            adet = reader["adet"] != DBNull.Value ? Convert.ToInt32(reader["adet"]) : 0;
+                        }
+                    }
+
+                    // Eğer masaId 0 ise null gönder
+                    object masaIdParam = masaId != 0 ? (object)masaId : DBNull.Value;
+
+                    // Siparişi siparisGecmisi tablosuna ekle (masaId null olabilir)
+                    string insertQuery = @"INSERT INTO siparisGecmisi (musteriId, masaId, urunId, adet, tarih) 
+                                           VALUES (@musteriId, @masaId, @urunId, @adet, @tarih)";
+                    MySqlCommand insertCmd = new MySqlCommand(insertQuery, conn);
+                    insertCmd.Parameters.AddWithValue("@musteriId", musteriId);
+                    insertCmd.Parameters.AddWithValue("@masaId", masaIdParam); // null olabilir
+                    insertCmd.Parameters.AddWithValue("@urunId", urunId);
+                    insertCmd.Parameters.AddWithValue("@adet", adet);
+                    insertCmd.Parameters.AddWithValue("@tarih", DateTime.Now);
+                    insertCmd.ExecuteNonQuery();
+
+                    // Ana sipariş tablosundan siparişi sil
+                    string deleteQuery = "DELETE FROM siparisler WHERE siparisId = @siparisId";
+                    MySqlCommand deleteCmd = new MySqlCommand(deleteQuery, conn);
+                    deleteCmd.Parameters.AddWithValue("@siparisId", siparisId);
+                    deleteCmd.ExecuteNonQuery();
+                }
+                else
+                {
+                    // Diğer durumlarda sadece durum güncellemesi yap
                     string query = "UPDATE siparisler SET durum = @durum WHERE siparisId = @siparisId";
                     MySqlCommand cmd = new MySqlCommand(query, conn);
                     cmd.Parameters.AddWithValue("@durum", secilenDurum);
                     cmd.Parameters.AddWithValue("@siparisId", siparisId);
                     cmd.ExecuteNonQuery();
                 }
-
-                SiparisiGecmiseEkle(siparisId);
-
-                SiparisleriGetir();
             }
+
+            SiparisleriGetir();
         }
 
         protected void btnGuncelle_Click(object sender, EventArgs e)
@@ -166,51 +210,9 @@ namespace STAJCAFE
             SiparisleriGetir();
         }
 
-        private void SiparisiGecmiseEkle(int siparisId)
-        {
-            using (MySqlConnection conn = new MySqlConnection(connStr))
-            {
-                conn.Open();
-
-                string query = @"
-                    SELECT s.*, u.fiyat 
-                    FROM siparisler s
-                    JOIN urunler u ON s.urunId = u.urunId
-                    WHERE s.siparisId = @siparisId";
-
-                MySqlCommand cmd = new MySqlCommand(query, conn);
-                cmd.Parameters.AddWithValue("@siparisId", siparisId);
-
-                using (MySqlDataReader reader = cmd.ExecuteReader())
-                {
-                    while (reader.Read())
-                    {
-                        int musteriId = Convert.ToInt32(reader["musteriId"]);
-                        int urunId = Convert.ToInt32(reader["urunId"]);
-                        int adet = Convert.ToInt32(reader["adet"]);
-                        DateTime tarih = DateTime.Now;
-
-                        decimal fiyat = Convert.ToDecimal(reader["fiyat"]);
-
-                        reader.Close();
-
-                        string insertQuery = @"INSERT INTO siparisGecmisi (musteriId, urunId, adet, tarih) 
-                                               VALUES (@musteriId, @urunId, @adet, @tarih)";
-                        MySqlCommand insertCmd = new MySqlCommand(insertQuery, conn);
-                        insertCmd.Parameters.AddWithValue("@musteriId", musteriId);
-                        insertCmd.Parameters.AddWithValue("@urunId", urunId);
-                        insertCmd.Parameters.AddWithValue("@adet", adet);
-                        insertCmd.Parameters.AddWithValue("@tarih", tarih);
-                        insertCmd.ExecuteNonQuery();
-                        break; // sadece 1 kayıt için örnek
-                    }
-                }
-            }
-        }
-
         protected void btnDetay_Click(object sender, EventArgs e)
         {
-            var btn = (Button)sender;
+            Button btn = (Button)sender;
             int siparisId = Convert.ToInt32(btn.CommandArgument);
 
             using (MySqlConnection conn = new MySqlConnection(connStr))

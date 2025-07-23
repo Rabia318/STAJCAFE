@@ -46,7 +46,7 @@
                     <p>
                         <asp:DropDownList ID="ddlKuryeler" runat="server" />
                     </p>
-
+                    
                     <p>
                         <asp:RadioButtonList ID="rblDurum" runat="server" RepeatDirection="Horizontal" AutoPostBack="true" OnSelectedIndexChanged="DurumGuncelle">
                             <asp:ListItem Text="Hazırlanıyor" Value="Hazırlanıyor" />

@@ -144,6 +144,7 @@
     <Content Include="SiparisGecmisi.aspx" />
     <Content Include="AnaSayfa1.aspx" />
     <Content Include="PaketTeslimatlar.aspx" />
+    <Content Include="Raporlar.aspx" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Giris.aspx.cs">
@@ -216,6 +217,13 @@
     </Compile>
     <Compile Include="PaketTeslimatlar.aspx.designer.cs">
       <DependentUpon>PaketTeslimatlar.aspx</DependentUpon>
+    </Compile>
+    <Compile Include="Raporlar.aspx.cs">
+      <DependentUpon>Raporlar.aspx</DependentUpon>
+      <SubType>ASPXCodeBehind</SubType>
+    </Compile>
+    <Compile Include="Raporlar.aspx.designer.cs">
+      <DependentUpon>Raporlar.aspx</DependentUpon>
     </Compile>
   </ItemGroup>
   <ItemGroup>
