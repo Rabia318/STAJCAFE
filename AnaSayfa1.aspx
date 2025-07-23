@@ -48,18 +48,22 @@
             <div class="dashboard-title">Toplam Sipariş</div>
             <asp:Label ID="lblToplamSiparis" runat="server" CssClass="dashboard-value" />
         </div>
+
         <div class="dashboard-box">
             <div class="dashboard-title">Toplam Ciro (₺)</div>
             <asp:Label ID="lblToplamCiro" runat="server" CssClass="dashboard-value" />
         </div>
+
         <div class="dashboard-box">
             <div class="dashboard-title">Aktif Masalar</div>
             <asp:Label ID="lblAktifMasalar" runat="server" CssClass="dashboard-value" />
         </div>
+
         <div class="dashboard-box">
             <div class="dashboard-title">Dışarıdan Sipariş</div>
             <asp:Label ID="lblDisSiparis" runat="server" CssClass="dashboard-value" />
         </div>
+
         <div class="dashboard-box">
             <div class="dashboard-title">En Çok Tercih Edilen Masa</div>
             <asp:Label ID="lblFavoriMasa" runat="server" CssClass="dashboard-value" />

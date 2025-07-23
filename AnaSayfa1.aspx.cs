@@ -18,8 +18,8 @@ namespace STAJCAFE
                 ToplamCiro();
                 AktifMasalar();
                 DisSiparis();
-                EnCokSatanlar();
                 FavoriMasa();
+                EnCokSatanlar();
                 HaftalikCiroGrafik();
                 HaftalikMusteriGrafik();
             }
@@ -30,7 +30,7 @@ namespace STAJCAFE
             using (var conn = new MySqlConnection(connStr))
             {
                 conn.Open();
-                var cmd = new MySqlCommand("SELECT COUNT(*) FROM siparisler", conn);
+                var cmd = new MySqlCommand("SELECT COUNT(*) FROM siparisGecmisi", conn);
                 lblToplamSiparis.Text = cmd.ExecuteScalar()?.ToString() ?? "0";
             }
         }
@@ -40,10 +40,14 @@ namespace STAJCAFE
             using (var conn = new MySqlConnection(connStr))
             {
                 conn.Open();
-                var cmd = new MySqlCommand("SELECT IFNULL(SUM(tutar), 0) FROM siparisler", conn);
+                string sql = @"
+                    SELECT IFNULL(SUM(s.adet * u.fiyat), 0)
+                    FROM siparisGecmisi s
+                    JOIN urunler u ON s.urunId = u.urunId";
+                var cmd = new MySqlCommand(sql, conn);
                 var result = cmd.ExecuteScalar();
-                decimal total = result != DBNull.Value && result != null ? Convert.ToDecimal(result) : 0;
-                lblToplamCiro.Text = total.ToString("N2");
+                decimal total = (result != DBNull.Value && result != null) ? Convert.ToDecimal(result) : 0;
+                lblToplamCiro.Text = total.ToString("N2") + " ₺";
             }
         }
 
@@ -52,7 +56,11 @@ namespace STAJCAFE
             using (var conn = new MySqlConnection(connStr))
             {
                 conn.Open();
-                var cmd = new MySqlCommand("SELECT COUNT(DISTINCT masaId) FROM siparisler", conn);
+                string sql = @"
+                    SELECT COUNT(DISTINCT masaId)
+                    FROM siparisGecmisi
+                    WHERE tarih >= CURDATE() - INTERVAL 1 DAY";
+                var cmd = new MySqlCommand(sql, conn);
                 lblAktifMasalar.Text = cmd.ExecuteScalar()?.ToString() ?? "0";
             }
         }
@@ -62,30 +70,12 @@ namespace STAJCAFE
             using (var conn = new MySqlConnection(connStr))
             {
                 conn.Open();
-                var cmd = new MySqlCommand("SELECT COUNT(*) FROM siparisler WHERE musteriId IS NOT NULL", conn);
-                lblDisSiparis.Text = cmd.ExecuteScalar()?.ToString() ?? "0";
-            }
-        }
-
-        void EnCokSatanlar()
-        {
-            using (var conn = new MySqlConnection(connStr))
-            {
-                conn.Open();
-
                 string sql = @"
-                    SELECT urunAdi AS Urun, SUM(adet) AS SatisSayisi 
-                    FROM siparisler 
-                    GROUP BY urunAdi 
-                    ORDER BY SatisSayisi DESC 
-                    LIMIT 5";
-
-                var da = new MySqlDataAdapter(sql, conn);
-                var dt = new DataTable();
-                da.Fill(dt);
-
-                gvEnCokSatanlar.DataSource = dt;
-                gvEnCokSatanlar.DataBind();
+                    SELECT COUNT(*)
+                    FROM siparisGecmisi
+                    WHERE masaId IS NULL AND musteriId IS NOT NULL";
+                var cmd = new MySqlCommand(sql, conn);
+                lblDisSiparis.Text = cmd.ExecuteScalar()?.ToString() ?? "0";
             }
         }
 
@@ -94,25 +84,21 @@ namespace STAJCAFE
             using (var conn = new MySqlConnection(connStr))
             {
                 conn.Open();
-
-                // Bu sorgu sadece en çok sipariş verilen masaId'yi getirir (tek değer)
                 string sql = @"
                     SELECT masaId
-                    FROM siparisler
+                    FROM siparisGecmisi
+                    WHERE masaId IS NOT NULL
                     GROUP BY masaId
                     ORDER BY COUNT(*) DESC
                     LIMIT 1";
-
                 var cmd = new MySqlCommand(sql, conn);
                 var result = cmd.ExecuteScalar();
 
                 if (result != null && result != DBNull.Value)
                 {
                     int masaId = Convert.ToInt32(result);
-
                     var cmd2 = new MySqlCommand("SELECT konum FROM masalar WHERE masaId = @masaId", conn);
                     cmd2.Parameters.AddWithValue("@masaId", masaId);
-
                     var konum = cmd2.ExecuteScalar()?.ToString() ?? "Bilinmiyor";
                     lblFavoriMasa.Text = konum;
                 }
@@ -123,25 +109,43 @@ namespace STAJCAFE
             }
         }
 
+        void EnCokSatanlar()
+        {
+            using (var conn = new MySqlConnection(connStr))
+            {
+                conn.Open();
+                string sql = @"
+                    SELECT u.urunAdi AS Urun, SUM(s.adet) AS SatisSayisi
+                    FROM siparisGecmisi s
+                    JOIN urunler u ON s.urunId = u.urunId
+                    GROUP BY u.urunAdi
+                    ORDER BY SatisSayisi DESC
+                    LIMIT 5";
+                var da = new MySqlDataAdapter(sql, conn);
+                var dt = new DataTable();
+                da.Fill(dt);
+                gvEnCokSatanlar.DataSource = dt;
+                gvEnCokSatanlar.DataBind();
+            }
+        }
+
         void HaftalikCiroGrafik()
         {
             using (var conn = new MySqlConnection(connStr))
             {
                 conn.Open();
-
                 string sql = @"
-                    SELECT DAYNAME(siparisTarihi) AS Gun, IFNULL(SUM(tutar),0) AS Ciro
-                    FROM siparisler
-                    WHERE siparisTarihi >= CURDATE() - INTERVAL 7 DAY
-                    GROUP BY Gun
-                    ORDER BY FIELD(Gun, 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday')";
-
+                    SELECT DATE(s.tarih) AS Tarih, IFNULL(SUM(s.adet * u.fiyat), 0) AS Ciro
+                    FROM siparisGecmisi s
+                    JOIN urunler u ON s.urunId = u.urunId
+                    WHERE s.tarih >= CURDATE() - INTERVAL 6 DAY
+                    GROUP BY Tarih
+                    ORDER BY Tarih";
                 var da = new MySqlDataAdapter(sql, conn);
                 var dt = new DataTable();
                 da.Fill(dt);
-
-                chartCiro.Series["Ciro"].Points.DataBind(dt.DefaultView, "Gun", "Ciro", "");
-                chartCiro.ChartAreas[0].AxisX.Title = "Günler";
+                chartCiro.Series["Ciro"].Points.DataBind(dt.DefaultView, "Tarih", "Ciro", "");
+                chartCiro.ChartAreas[0].AxisX.Title = "Tarih";
                 chartCiro.ChartAreas[0].AxisY.Title = "Ciro (₺)";
             }
         }
@@ -151,20 +155,17 @@ namespace STAJCAFE
             using (var conn = new MySqlConnection(connStr))
             {
                 conn.Open();
-
                 string sql = @"
-                    SELECT DAYNAME(siparisTarihi) AS Gun, COUNT(DISTINCT musteriId) AS MusteriSayisi
-                    FROM siparisler
-                    WHERE siparisTarihi >= CURDATE() - INTERVAL 7 DAY
-                    GROUP BY Gun
-                    ORDER BY FIELD(Gun, 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday')";
-
+                    SELECT DATE(tarih) AS Tarih, COUNT(DISTINCT musteriId) AS MusteriSayisi
+                    FROM siparisGecmisi
+                    WHERE tarih >= CURDATE() - INTERVAL 6 DAY
+                    GROUP BY Tarih
+                    ORDER BY Tarih";
                 var da = new MySqlDataAdapter(sql, conn);
                 var dt = new DataTable();
                 da.Fill(dt);
-
-                chartMusteri.Series["Müşteri"].Points.DataBind(dt.DefaultView, "Gun", "MusteriSayisi", "");
-                chartMusteri.ChartAreas[0].AxisX.Title = "Günler";
+                chartMusteri.Series["Müşteri"].Points.DataBind(dt.DefaultView, "Tarih", "MusteriSayisi", "");
+                chartMusteri.ChartAreas[0].AxisX.Title = "Tarih";
                 chartMusteri.ChartAreas[0].AxisY.Title = "Müşteri Sayısı";
             }
         }
